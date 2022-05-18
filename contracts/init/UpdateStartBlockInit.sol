@@ -8,5 +8,8 @@ contract UpdateStartBlockInit {
   function init(uint256 startBlock) external {
     FarmStorage.Layout storage s = FarmStorage.layout();
     s.startBlock = startBlock;
+    for (uint256 i; i < s.poolInfo.length; i++) {
+      s.poolInfo[i].lastRewardBlock = startBlock;
+    }
   }
 }
