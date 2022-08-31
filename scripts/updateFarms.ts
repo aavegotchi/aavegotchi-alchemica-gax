@@ -15,22 +15,17 @@ async function main() {
     farmFacet = await impersonate(owner, farmFacet, ethers, network);
   }
 
-  //   console.log("Remove GHST-WMATIC rewards");
-  //   let tx = await farmFacet.set(
-  //     "6", //ghst-wmatic
-  //     "0",
-  //     true
-  //   );
-  //   await tx.wait();
+  console.log("Remove GHST-WMATIC rewards");
+  let tx = await farmFacet.set(
+    "6", //ghst-wmatic
+    "0",
+    true
+  );
+  await tx.wait();
 
-  //   console.log("Set GHST-USDC to 20%");
-  //   tx = await farmFacet.set("5", "4", true);
-  //   await tx.wait();
-
-  for (let i = 0; i < 10; i++) {
-    const poolInfo = await farmFacet.poolInfo(i);
-    console.log("Pool info:", poolInfo);
-  }
+  console.log("Set GHST-USDC to 20%");
+  tx = await farmFacet.set("5", "4", true); //ghst-usdc
+  await tx.wait();
 }
 
 main()
