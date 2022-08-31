@@ -100,7 +100,7 @@ export default {
       url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-      gasPrice: 1000 * 1000 * 1000 * 100,
+      gasPrice: 1000000000000, //1000
     },
     // mumbai: {
     //   url: process.env.MUMBAI_URL,
