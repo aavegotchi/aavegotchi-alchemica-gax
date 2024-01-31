@@ -60,7 +60,7 @@ contract StakingFacet is ReentrancyGuard {
 
   // Trade NFTs for staking tokens and gltr
   // Withdraws staking tokens and gltr and burn NFTs
-  function burn(uint256[] calldata _tokenIds) external nonReentrant {    
+  function burnStakingTokens(uint256[] calldata _tokenIds) external nonReentrant {    
     StakingTokenStorage storage st = LibStakingToken.diamondStorage();
     FarmStorage.Layout storage lo = FarmStorage.layout();
     IERC20 gltrToken = lo.rewardToken;
@@ -87,6 +87,35 @@ contract StakingFacet is ReentrancyGuard {
       emit BurnStakingToken(msg.sender, tokenId, pid, address(lpToken), tokenStakedAmount, gltrAmount);
     }
   }
+
+  // Burn staking tokens without receiving GLTR tokens.
+  // Only returns liquidity tokens
+  function emergencyBurnStakingTokens(uint256[] calldata _tokenIds) external nonReentrant {    
+    StakingTokenStorage storage st = LibStakingToken.diamondStorage();
+    FarmStorage.Layout storage lo = FarmStorage.layout();
+    IERC20 gltrToken = lo.rewardToken;
+    for(uint256 i; i < _tokenIds.length; i++) {
+      uint256 tokenId = _tokenIds[i];
+      TokenInfo storage ti = st.tokenInfo[tokenId];
+      address owner = ti.owner;
+      if(owner == address(0)) {
+        revert IERC721Errors.ERC721NonexistentToken(tokenId);
+      }
+      if(!LibStakingToken.isAuthorized(owner, msg.sender, tokenId)) {
+        revert IERC721Errors.ERC721InsufficientApproval(msg.sender, tokenId);
+      }      
+      uint256 pid = ti.poolId;      
+      PoolInfo storage pool = lo.poolInfo[pid];
+      uint256 tokenStakedAmount = ti.stakedTokenAmount;           
+      IERC20 lpToken = pool.lpToken;
+      SafeERC20.safeTransferFrom(lpToken, address(this), owner, tokenStakedAmount);
+      LibStakingToken.burn(tokenId);
+      emit BurnStakingToken(msg.sender, tokenId, pid, address(lpToken), tokenStakedAmount, 0);
+      emit LibFarm.emergencyWithdraw(owner, pid, tokenStakedAmount);
+    }
+  }
+
+
 
   struct Bonus {
     uint256 pid; // pool id
