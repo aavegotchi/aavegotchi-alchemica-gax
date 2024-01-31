@@ -18,9 +18,9 @@ contract StakingFacet is ReentrancyGuard {
   event MintStakingToken(address indexed _minter, uint256 _tokenId, uint256 indexed _pid, address _lpToken, uint256 _lpAmount);
   event BurnStakingToken(address indexed _burner, uint256 _tokenId, uint256 indexed _pid, address _lpToken, uint256 _lpAmount, uint256 _gltrAmount);
       
-  // Trade staking tokens for NFT
-  // Deposits staking tokens and mints NFT
-  // The pid determines which staking token to use with amount
+  // Trade liquidity tokens for GLTR Staking Token
+  // Deposits liquidity and mints GLTR Staking Token
+  // The pid determines which liquidity token to use with amount
   function mintStakingTokens(uint256[] calldata _pids, uint256[] calldata _amounts) public nonReentrant {
     require(_pids.length == _amounts.length, "_pids length not equal to amounts length");    
     StakingTokenStorage storage rt = LibStakingToken.diamondStorage();
@@ -58,8 +58,8 @@ contract StakingFacet is ReentrancyGuard {
   }
 
 
-  // Trade NFTs for staking tokens and gltr
-  // Withdraws staking tokens and gltr and burn NFTs
+  // Trade GLTR Staking Tokens for liquidity tokens and gltr
+  // Withdraws liquidity tokens and gltr and burns GLTR Staking Token
   function burnStakingTokens(uint256[] calldata _tokenIds) external nonReentrant {    
     StakingTokenStorage storage st = LibStakingToken.diamondStorage();
     FarmStorage.Layout storage lo = FarmStorage.layout();
@@ -142,7 +142,7 @@ contract StakingFacet is ReentrancyGuard {
   // GETTERS
   //////////////////////////////////////////////////////////////////////////////
 
-  // Return the total gltr that an NFT can be traded for
+  // Return the total gltr that an GLTR Staking Token can be traded for
   function stakingTokenGltr(uint256 _tokenId) public view returns(uint256) {
     TokenInfo storage ti = LibStakingToken.diamondStorage().tokenInfo[_tokenId];
     if(ti.owner == address(0)) {
