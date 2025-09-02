@@ -36,18 +36,12 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // Deposit LP tokens to Farm for ERC20 allocation.
-  function deposit(uint256 _pid, uint256 _amount)
-    external
-    nonReentrant
-  {
+  function deposit(uint256 _pid, uint256 _amount) external nonReentrant {
     LibFarm.deposit(_pid, _amount);
   }
 
   // Withdraw LP tokens from Farm.
-  function withdraw(uint256 _pid, uint256 _amount)
-    external
-    nonReentrant
-  {
+  function withdraw(uint256 _pid, uint256 _amount) external nonReentrant {
     LibFarm.withdraw(_pid, _amount);
   }
 
@@ -57,10 +51,7 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // Batch harvest rewards
-  function batchHarvest(uint256[] memory _pids)
-    external
-    nonReentrant
-  {
+  function batchHarvest(uint256[] memory _pids) external nonReentrant {
     for (uint256 i = 0; i < _pids.length; ++i) {
       LibFarm.updatePoolAndHarvest(msg.sender, _pids[i]);
     }
@@ -86,20 +77,15 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // View function to see deposited LP for a user.
-  function deposited(uint256 _pid, address _user)
-    external
-    view
-    returns (uint256)
-  {
+  function deposited(
+    uint256 _pid,
+    address _user
+  ) external view returns (uint256) {
     return s().userInfo[_pid][_user].amount;
   }
 
   // View function to see pending ERC20s for a user.
-  function pending(uint256 _pid, address _user)
-    public
-    view
-    returns (uint256)
-  {
+  function pending(uint256 _pid, address _user) public view returns (uint256) {
     PoolInfo storage pool = s().poolInfo[_pid];
     UserInfo storage user = s().userInfo[_pid][_user];
     uint256 accERC20PerShare = pool.accERC20PerShare;
@@ -119,21 +105,14 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // View function for total reward the farm has yet to pay out.
-  function totalPending()
-    external
-    view
-    returns (uint256 totalPending_)
-  {
+  function totalPending() external view returns (uint256 totalPending_) {
     uint256 _startBlock = s().startBlock;
     if (block.number <= _startBlock) {
       return 0;
     }
 
     totalPending_ =
-      LibFarm.sumRewardPerBlock(
-        _startBlock,
-        block.number - _startBlock
-      ) -
+      LibFarm.sumRewardPerBlock(_startBlock, block.number - _startBlock) -
       s().paidOut;
   }
 
@@ -145,11 +124,9 @@ contract FarmFacet is Ownable, ReentrancyGuard {
     uint256 poolBalance; // Amount of LP tokens in the pool
   }
 
-  function allUserInfo(address _user)
-    external
-    view
-    returns (UserInfoOutput[] memory)
-  {
+  function allUserInfo(
+    address _user
+  ) external view returns (UserInfoOutput[] memory) {
     UserInfoOutput[] memory userInfo_ = new UserInfoOutput[](
       s().poolInfo.length
     );
@@ -174,27 +151,17 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // Returns the reward per block for the specified year. 0 is the first year
-  function rewardPerBlock(uint256 year)
-    external
-    pure
-    returns (uint256)
-  {
+  function rewardPerBlock(uint256 year) external pure returns (uint256) {
     return LibFarm.rewardPerBlock(year);
   }
 
   function currentRewardPerBlock() external view returns (uint256) {
     if (block.number < s().startBlock) return 0;
     return
-      LibFarm.rewardPerBlock(
-        (block.number - s().startBlock) / s().decayPeriod
-      );
+      LibFarm.rewardPerBlock((block.number - s().startBlock) / s().decayPeriod);
   }
 
-  function poolInfo(uint256 _pid)
-    external
-    view
-    returns (PoolInfo memory pi)
-  {
+  function poolInfo(uint256 _pid) external view returns (PoolInfo memory pi) {
     return s().poolInfo[_pid];
   }
 
@@ -206,11 +173,10 @@ contract FarmFacet is Ownable, ReentrancyGuard {
     return s().poolInfo[_pid].lpToken.balanceOf(address(this));
   }
 
-  function userInfo(uint256 _pid, address _user)
-    external
-    view
-    returns (UserInfo memory ui)
-  {
+  function userInfo(
+    uint256 _pid,
+    address _user
+  ) external view returns (UserInfo memory ui) {
     return s().userInfo[_pid][_user];
   }
 
