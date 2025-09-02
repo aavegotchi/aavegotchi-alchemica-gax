@@ -27,6 +27,7 @@ library FarmStorage {
     uint256 totalAllocPoint; // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 startBlock; // The block number when farming starts.
     uint256 decayPeriod; // # of blocks after which rewards decay.
+    uint256 stopBlock; // Block at which emissions are paused (0 = not paused)
   }
 
   bytes32 internal constant STORAGE_SLOT =

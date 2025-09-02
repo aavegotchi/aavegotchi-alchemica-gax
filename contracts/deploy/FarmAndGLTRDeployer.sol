@@ -105,7 +105,7 @@ contract FarmAndGLTRDeployer {
     address farmFacet
   ) internal pure returns (IDiamondCut.FacetCut[] memory farmCuts) {
     farmCuts = new IDiamondCut.FacetCut[](1);
-    bytes4[] memory farmFunctionSelectors = new bytes4[](25);
+    bytes4[] memory farmFunctionSelectors = new bytes4[](28);
     {
       uint256 index;
       farmFunctionSelectors[index++] = FarmFacet.add.selector;
@@ -133,6 +133,9 @@ contract FarmAndGLTRDeployer {
       farmFunctionSelectors[index++] = FarmFacet.allUserInfo.selector;
       farmFunctionSelectors[index++] = FarmFacet.currentRewardPerBlock.selector;
       farmFunctionSelectors[index++] = FarmFacet.poolBalance.selector;
+      farmFunctionSelectors[index++] = FarmFacet.pauseEmissions.selector;
+      farmFunctionSelectors[index++] = FarmFacet.resumeEmissions.selector;
+      farmFunctionSelectors[index++] = FarmFacet.transferRemainingGltr.selector;
     }
     farmCuts[0] = IDiamondCut.FacetCut(
       farmFacet,
