@@ -60,35 +60,25 @@ contract FarmAndGLTRDeployer {
     );
 
     // Transfer ownership of the diamond to the sender
-    OwnershipFacet(deployedAddresses.diamond).transferOwnership(
-      msg.sender
-    );
+    OwnershipFacet(deployedAddresses.diamond).transferOwnership(msg.sender);
   }
 
   function populateDiamondCuts(
     address diamondLoupeFacet,
     address ownershipFacet
-  )
-    internal
-    pure
-    returns (IDiamondCut.FacetCut[] memory diamondCuts)
-  {
+  ) internal pure returns (IDiamondCut.FacetCut[] memory diamondCuts) {
     diamondCuts = new IDiamondCut.FacetCut[](2);
     bytes4[] memory loupeFunctionSelectors = new bytes4[](4);
     {
       uint256 index;
-      loupeFunctionSelectors[index++] = DiamondLoupeFacet
-        .facets
-        .selector;
+      loupeFunctionSelectors[index++] = DiamondLoupeFacet.facets.selector;
       loupeFunctionSelectors[index++] = DiamondLoupeFacet
         .facetFunctionSelectors
         .selector;
       loupeFunctionSelectors[index++] = DiamondLoupeFacet
         .facetAddresses
         .selector;
-      loupeFunctionSelectors[index++] = DiamondLoupeFacet
-        .facetAddress
-        .selector;
+      loupeFunctionSelectors[index++] = DiamondLoupeFacet.facetAddress.selector;
     }
     diamondCuts[0] = IDiamondCut.FacetCut(
       diamondLoupeFacet,
@@ -98,9 +88,7 @@ contract FarmAndGLTRDeployer {
     bytes4[] memory ownershipFunctionSelectors = new bytes4[](2);
     {
       uint256 index;
-      ownershipFunctionSelectors[index++] = OwnershipFacet
-        .owner
-        .selector;
+      ownershipFunctionSelectors[index++] = OwnershipFacet.owner.selector;
       ownershipFunctionSelectors[index++] = OwnershipFacet
         .transferOwnership
         .selector;
@@ -113,53 +101,37 @@ contract FarmAndGLTRDeployer {
     return diamondCuts;
   }
 
-  function populateFarmCuts(address farmFacet)
-    internal
-    pure
-    returns (IDiamondCut.FacetCut[] memory farmCuts)
-  {
+  function populateFarmCuts(
+    address farmFacet
+  ) internal pure returns (IDiamondCut.FacetCut[] memory farmCuts) {
     farmCuts = new IDiamondCut.FacetCut[](1);
     bytes4[] memory farmFunctionSelectors = new bytes4[](25);
     {
       uint256 index;
       farmFunctionSelectors[index++] = FarmFacet.add.selector;
       farmFunctionSelectors[index++] = FarmFacet.set.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .massUpdatePools
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.massUpdatePools.selector;
       farmFunctionSelectors[index++] = FarmFacet.updatePool.selector;
       farmFunctionSelectors[index++] = FarmFacet.deposit.selector;
       farmFunctionSelectors[index++] = FarmFacet.withdraw.selector;
       farmFunctionSelectors[index++] = FarmFacet.harvest.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .batchHarvest
-        .selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .emergencyWithdraw
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.batchHarvest.selector;
+      farmFunctionSelectors[index++] = FarmFacet.emergencyWithdraw.selector;
       farmFunctionSelectors[index++] = FarmFacet.poolLength.selector;
       farmFunctionSelectors[index++] = FarmFacet.deposited.selector;
       farmFunctionSelectors[index++] = FarmFacet.pending.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .totalPending
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.totalPending.selector;
       farmFunctionSelectors[index++] = FarmFacet.rewardToken.selector;
       farmFunctionSelectors[index++] = FarmFacet.paidOut.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .rewardPerBlock
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.rewardPerBlock.selector;
       farmFunctionSelectors[index++] = FarmFacet.poolInfo.selector;
       farmFunctionSelectors[index++] = FarmFacet.poolTokens.selector;
       farmFunctionSelectors[index++] = FarmFacet.userInfo.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .totalAllocPoint
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.totalAllocPoint.selector;
       farmFunctionSelectors[index++] = FarmFacet.startBlock.selector;
       farmFunctionSelectors[index++] = FarmFacet.decayPeriod.selector;
       farmFunctionSelectors[index++] = FarmFacet.allUserInfo.selector;
-      farmFunctionSelectors[index++] = FarmFacet
-        .currentRewardPerBlock
-        .selector;
+      farmFunctionSelectors[index++] = FarmFacet.currentRewardPerBlock.selector;
       farmFunctionSelectors[index++] = FarmFacet.poolBalance.selector;
     }
     farmCuts[0] = IDiamondCut.FacetCut(
