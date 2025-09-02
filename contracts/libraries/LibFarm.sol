@@ -12,16 +12,8 @@ import { FarmStorage, PoolInfo, UserInfo } from "./FarmStorage.sol";
 library LibFarm {
   using SafeERC20 for IERC20;
 
-  event Deposit(
-    address indexed user,
-    uint256 indexed pid,
-    uint256 amount
-  );
-  event Withdraw(
-    address indexed user,
-    uint256 indexed pid,
-    uint256 amount
-  );
+  event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+  event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
   event EmergencyWithdraw(
     address indexed user,
     uint256 indexed pid,
@@ -30,11 +22,7 @@ library LibFarm {
   event Harvest(address indexed user, uint256 amount);
 
   // Helper getter function for a predefined set of rewards for 30 years
-  function rewardPerBlock(uint256 period)
-    internal
-    pure
-    returns (uint256)
-  {
+  function rewardPerBlock(uint256 period) internal pure returns (uint256) {
     // assumes 13,870,000 blocks per year to distribute a total of 1 trillion GLTR
     uint256[30] memory _rewardPerBlock = [
       uint256(7_209_805_335_256 gwei), // cast to force array to be uint256 (compiler issue)
@@ -92,8 +80,7 @@ library LibFarm {
     uint256 blocksLeftInCurrentPeriod = decayPeriod -
       (blocksPassedToLastRewardSinceStart % decayPeriod);
     // The period of the last reward block
-    uint256 currentPeriod = blocksPassedToLastRewardSinceStart /
-      decayPeriod;
+    uint256 currentPeriod = blocksPassedToLastRewardSinceStart / decayPeriod;
 
     // Add min(current period, nrOfBlocks) * rewardPerBlock to total reward
     totalReward +=
@@ -131,10 +118,7 @@ library LibFarm {
     IERC20 _lpToken,
     bool _withUpdate
   ) internal {
-    require(
-      !s().poolTokens[address(_lpToken)],
-      "add: LP token already added"
-    );
+    require(!s().poolTokens[address(_lpToken)], "add: LP token already added");
     s().poolTokens[address(_lpToken)] = true;
     if (_withUpdate) {
       massUpdatePools();
@@ -154,11 +138,7 @@ library LibFarm {
   }
 
   // Update the given pool's ERC20 allocation point. Can only be called by the owner.
-  function set(
-    uint256 _pid,
-    uint256 _allocPoint,
-    bool _withUpdate
-  ) internal {
+  function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) internal {
     require(
       s().poolTokens[address(s().poolInfo[_pid].lpToken)],
       "set: LP token not added"
@@ -197,14 +177,19 @@ library LibFarm {
       return;
     }
 
-    uint256 nrOfBlocks = block.number - pool.lastRewardBlock;
-    uint256 erc20Reward = (sumRewardPerBlock(
-      pool.lastRewardBlock,
-      nrOfBlocks
-    ) * pool.allocPoint) / s().totalAllocPoint;
+    uint256 current = s().stopBlock != 0 && s().stopBlock < block.number
+      ? s().stopBlock
+      : block.number;
+    if (current <= pool.lastRewardBlock) {
+      return;
+    }
+
+    uint256 nrOfBlocks = current - pool.lastRewardBlock;
+    uint256 erc20Reward = (sumRewardPerBlock(pool.lastRewardBlock, nrOfBlocks) *
+      pool.allocPoint) / s().totalAllocPoint;
 
     pool.accERC20PerShare += (erc20Reward * 1e18) / lpSupply;
-    pool.lastRewardBlock = block.number;
+    pool.lastRewardBlock = current;
   }
 
   // Deposit LP tokens to Farm for ERC20 allocation.

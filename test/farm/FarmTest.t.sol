@@ -135,12 +135,7 @@ contract FarmTest is TestSetupFarm {
           farm.pending(j, address(user1)),
           expectedPending,
           string(
-            abi.encodePacked(
-              "le1, i: ",
-              i.toString(),
-              " j: ",
-              j.toString()
-            )
+            abi.encodePacked("le1, i: ", i.toString(), " j: ", j.toString())
           )
         );
         assertGe(
@@ -149,12 +144,7 @@ contract FarmTest is TestSetupFarm {
             ? expectedPending - roundingTolerance
             : 0,
           string(
-            abi.encodePacked(
-              "ge1, i: ",
-              i.toString(),
-              " j: ",
-              j.toString()
-            )
+            abi.encodePacked("ge1, i: ", i.toString(), " j: ", j.toString())
           )
         );
         assertGe(farm.pending(j, address(user1)), pending, "ge2");
@@ -163,11 +153,64 @@ contract FarmTest is TestSetupFarm {
     }
   }
 
-  function testHarvest(
-    uint256 amount,
-    uint256 period,
-    uint8 numTokens
-  ) public {
+  //we need to make sure that the totalPending does not increase after emissions is paused
+  function testPauseEmissions(uint256 amount, uint8 numTokens) public {
+    vm.assume(amount > 0 && amount <= 1e30);
+    vm.assume(numTokens > 0 && numTokens <= 5);
+
+    vm.roll(startBlock);
+
+    for (uint256 i = 0; i < numTokens; i++) {
+      farm.add(1, lpTokens[i], true);
+      lpTokens[i].mint(address(user1), amount);
+      vm.prank(address(user1));
+      lpTokens[i].approve(address(farm), amount);
+      vm.prank(address(user1));
+      farm.deposit(i, amount);
+    }
+
+    uint256 blocksUntilStop = 1000;
+    uint256 postPauseBlocks = 10000;
+
+    uint256 stopBlock = startBlock + blocksUntilStop;
+    farm.pauseEmissions(stopBlock);
+
+    // Before stopBlock, totalPending should track emissions as normal
+    uint256 midBlock = startBlock + (blocksUntilStop / 2);
+    vm.roll(midBlock);
+    {
+      uint256 expectedTotalPending;
+      uint256 blocksPassed = midBlock - startBlock;
+      uint256 k;
+      for (; k < blocksPassed / farm.decayPeriod(); k++) {
+        expectedTotalPending += farm.rewardPerBlock(k) * 38000 * 365;
+      }
+      expectedTotalPending +=
+        farm.rewardPerBlock(k) *
+        (blocksPassed % farm.decayPeriod());
+      assertEq(farm.totalPending(), expectedTotalPending, "pre-stop");
+    }
+
+    vm.roll(stopBlock);
+    uint256 expectedAtStop;
+    {
+      uint256 blocksPassed = stopBlock - startBlock;
+      uint256 k;
+      for (; k < blocksPassed / farm.decayPeriod(); k++) {
+        expectedAtStop += farm.rewardPerBlock(k) * 38000 * 365;
+      }
+      expectedAtStop +=
+        farm.rewardPerBlock(k) *
+        (blocksPassed % farm.decayPeriod());
+      assertEq(farm.totalPending(), expectedAtStop, "at-stop");
+    }
+
+    // After stopBlock, totalPending should not increase further
+    vm.roll(stopBlock + postPauseBlocks);
+    assertEq(farm.totalPending(), expectedAtStop, "post-stop");
+  }
+
+  function testHarvest(uint256 amount, uint256 period, uint8 numTokens) public {
     vm.assume(amount > 1 && amount <= 1e50);
     vm.assume(period > 0 && period < 365 * 38000 * 40); // 40 years of blocks
     vm.assume(numTokens > 0 && numTokens <= 5);
@@ -197,11 +240,7 @@ contract FarmTest is TestSetupFarm {
       vm.prank(address(user2));
       farm.harvest(i);
       assertEq(farm.userInfo(i, address(user1)).amount, amount, "1");
-      assertEq(
-        pending,
-        farm.userInfo(i, address(user1)).rewardDebt,
-        "2"
-      );
+      assertEq(pending, farm.userInfo(i, address(user1)).rewardDebt, "2");
       assertEq(farm.pending(i, address(user1)), 0, "3");
     }
   }
@@ -233,8 +272,8 @@ contract FarmTest is TestSetupFarm {
         uint256 pending1;
         uint256 pending2;
         {
-          uint256 lastBlock = (j - 1)**3;
-          uint256 nextBlock = j**3;
+          uint256 lastBlock = (j - 1) ** 3;
+          uint256 nextBlock = j ** 3;
 
           uint256 startRewardPerBlock = farm.currentRewardPerBlock();
 
@@ -258,54 +297,30 @@ contract FarmTest is TestSetupFarm {
 
           assertGe(
             pending1,
-            (Math.min(expectedPendingLB1, expectedPendingUB1) * 99) /
-              100,
+            (Math.min(expectedPendingLB1, expectedPendingUB1) * 99) / 100,
             string(
-              abi.encodePacked(
-                "1 i: ",
-                i.toString(),
-                " j: ",
-                j.toString()
-              )
+              abi.encodePacked("1 i: ", i.toString(), " j: ", j.toString())
             )
           );
           assertLe(
             pending1,
-            (Math.max(expectedPendingLB1, expectedPendingUB1) * 101) /
-              100,
+            (Math.max(expectedPendingLB1, expectedPendingUB1) * 101) / 100,
             string(
-              abi.encodePacked(
-                "2 i: ",
-                i.toString(),
-                " j: ",
-                j.toString()
-              )
+              abi.encodePacked("2 i: ", i.toString(), " j: ", j.toString())
             )
           );
           assertGe(
             pending2,
-            (Math.min(expectedPendingLB2, expectedPendingUB2) * 99) /
-              100,
+            (Math.min(expectedPendingLB2, expectedPendingUB2) * 99) / 100,
             string(
-              abi.encodePacked(
-                "3 i: ",
-                i.toString(),
-                " j: ",
-                j.toString()
-              )
+              abi.encodePacked("3 i: ", i.toString(), " j: ", j.toString())
             )
           );
           assertLe(
             pending2,
-            (Math.max(expectedPendingLB2, expectedPendingUB2) * 101) /
-              100,
+            (Math.max(expectedPendingLB2, expectedPendingUB2) * 101) / 100,
             string(
-              abi.encodePacked(
-                "4 i: ",
-                i.toString(),
-                " j: ",
-                j.toString()
-              )
+              abi.encodePacked("4 i: ", i.toString(), " j: ", j.toString())
             )
           );
         }
@@ -335,9 +350,7 @@ contract FarmTest is TestSetupFarm {
     }
   }
 
-  function testEmergencyWithdraw(uint256 amount, uint8 numTokens)
-    public
-  {
+  function testEmergencyWithdraw(uint256 amount, uint8 numTokens) public {
     vm.assume(amount > 0 && amount <= 1e50);
     vm.assume(numTokens > 0 && numTokens <= 20);
 
@@ -403,16 +416,8 @@ contract FarmTest is TestSetupFarm {
     for (uint256 i; i < yearlyExpectedAmounts.length; i++) {
       vm.roll(startBlock + (i + 1) * 365 * 38000);
       sumExpectedAmounts += yearlyExpectedAmounts[i];
-      assertGe(
-        farm.totalPending(),
-        (sumExpectedAmounts * 99) / 100,
-        "1"
-      );
-      assertLe(
-        farm.totalPending(),
-        (sumExpectedAmounts * 101) / 100,
-        "2"
-      );
+      assertGe(farm.totalPending(), (sumExpectedAmounts * 99) / 100, "1");
+      assertLe(farm.totalPending(), (sumExpectedAmounts * 101) / 100, "2");
     }
   }
 }
