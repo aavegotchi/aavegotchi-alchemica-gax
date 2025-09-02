@@ -91,8 +91,11 @@ contract FarmFacet is Ownable, ReentrancyGuard {
     uint256 accERC20PerShare = pool.accERC20PerShare;
     uint256 lpSupply = pool.lpToken.balanceOf(address(this));
 
-    if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-      uint256 nrOfBlocks = block.number - pool.lastRewardBlock;
+    uint256 current = s().stopBlock != 0 && s().stopBlock < block.number
+      ? s().stopBlock
+      : block.number;
+    if (current > pool.lastRewardBlock && lpSupply != 0) {
+      uint256 nrOfBlocks = current - pool.lastRewardBlock;
       uint256 erc20Reward = (LibFarm.sumRewardPerBlock(
         pool.lastRewardBlock,
         nrOfBlocks
@@ -105,15 +108,34 @@ contract FarmFacet is Ownable, ReentrancyGuard {
   }
 
   // View function for total reward the farm has yet to pay out.
-  function totalPending() external view returns (uint256 totalPending_) {
+  function totalPending() public view returns (uint256 totalPending_) {
     uint256 _startBlock = s().startBlock;
-    if (block.number <= _startBlock) {
+    uint256 current = s().stopBlock != 0 && s().stopBlock < block.number
+      ? s().stopBlock
+      : block.number;
+    if (current <= _startBlock) {
       return 0;
     }
 
     totalPending_ =
-      LibFarm.sumRewardPerBlock(_startBlock, block.number - _startBlock) -
+      LibFarm.sumRewardPerBlock(_startBlock, current - _startBlock) -
       s().paidOut;
+  }
+
+  function pauseEmissions(uint256 stopBlock_) external onlyOwner {
+    require(stopBlock_ >= block.number, "stopBlock in past");
+    s().stopBlock = stopBlock_;
+  }
+
+  function resumeEmissions() external onlyOwner {
+    s().stopBlock = 0;
+  }
+
+  //should be called only if a stopBlock has been set
+  function transferRemainingGltr(address to) external onlyOwner {
+    uint256 remaining = IERC20(s().rewardToken).balanceOf(address(this)) -
+      totalPending();
+    (s().rewardToken).transfer(to, remaining);
   }
 
   struct UserInfoOutput {

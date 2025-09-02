@@ -177,12 +177,19 @@ library LibFarm {
       return;
     }
 
-    uint256 nrOfBlocks = block.number - pool.lastRewardBlock;
+    uint256 current = s().stopBlock != 0 && s().stopBlock < block.number
+      ? s().stopBlock
+      : block.number;
+    if (current <= pool.lastRewardBlock) {
+      return;
+    }
+
+    uint256 nrOfBlocks = current - pool.lastRewardBlock;
     uint256 erc20Reward = (sumRewardPerBlock(pool.lastRewardBlock, nrOfBlocks) *
       pool.allocPoint) / s().totalAllocPoint;
 
     pool.accERC20PerShare += (erc20Reward * 1e18) / lpSupply;
-    pool.lastRewardBlock = block.number;
+    pool.lastRewardBlock = current;
   }
 
   // Deposit LP tokens to Farm for ERC20 allocation.

@@ -153,6 +153,63 @@ contract FarmTest is TestSetupFarm {
     }
   }
 
+  //we need to make sure that the totalPending does not increase after emissions is paused
+  function testPauseEmissions(uint256 amount, uint8 numTokens) public {
+    vm.assume(amount > 0 && amount <= 1e30);
+    vm.assume(numTokens > 0 && numTokens <= 5);
+
+    vm.roll(startBlock);
+
+    for (uint256 i = 0; i < numTokens; i++) {
+      farm.add(1, lpTokens[i], true);
+      lpTokens[i].mint(address(user1), amount);
+      vm.prank(address(user1));
+      lpTokens[i].approve(address(farm), amount);
+      vm.prank(address(user1));
+      farm.deposit(i, amount);
+    }
+
+    uint256 blocksUntilStop = 1000;
+    uint256 postPauseBlocks = 10000;
+
+    uint256 stopBlock = startBlock + blocksUntilStop;
+    farm.pauseEmissions(stopBlock);
+
+    // Before stopBlock, totalPending should track emissions as normal
+    uint256 midBlock = startBlock + (blocksUntilStop / 2);
+    vm.roll(midBlock);
+    {
+      uint256 expectedTotalPending;
+      uint256 blocksPassed = midBlock - startBlock;
+      uint256 k;
+      for (; k < blocksPassed / farm.decayPeriod(); k++) {
+        expectedTotalPending += farm.rewardPerBlock(k) * 38000 * 365;
+      }
+      expectedTotalPending +=
+        farm.rewardPerBlock(k) *
+        (blocksPassed % farm.decayPeriod());
+      assertEq(farm.totalPending(), expectedTotalPending, "pre-stop");
+    }
+
+    vm.roll(stopBlock);
+    uint256 expectedAtStop;
+    {
+      uint256 blocksPassed = stopBlock - startBlock;
+      uint256 k;
+      for (; k < blocksPassed / farm.decayPeriod(); k++) {
+        expectedAtStop += farm.rewardPerBlock(k) * 38000 * 365;
+      }
+      expectedAtStop +=
+        farm.rewardPerBlock(k) *
+        (blocksPassed % farm.decayPeriod());
+      assertEq(farm.totalPending(), expectedAtStop, "at-stop");
+    }
+
+    // After stopBlock, totalPending should not increase further
+    vm.roll(stopBlock + postPauseBlocks);
+    assertEq(farm.totalPending(), expectedAtStop, "post-stop");
+  }
+
   function testHarvest(uint256 amount, uint256 period, uint8 numTokens) public {
     vm.assume(amount > 1 && amount <= 1e50);
     vm.assume(period > 0 && period < 365 * 38000 * 40); // 40 years of blocks
