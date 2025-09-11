@@ -13,6 +13,7 @@ import { IDiamondLoupe, IDiamondCut } from "../typechain-types";
 import { LedgerSigner } from "@anders-t/ethers-ledger";
 import {
   gasPrice,
+  getLedgerSigner,
   getSelectors,
   getSighashes,
 } from "../scripts/helperFunctions";
@@ -132,7 +133,7 @@ task(
         signer = await hre.ethers.getSigner(owner);
       } else if (hre.network.name === "matic") {
         if (useLedger) {
-          signer = new LedgerSigner(hre.ethers.provider);
+          signer = await getLedgerSigner(hre.ethers);
         } else signer = (await hre.ethers.getSigners())[0];
       } else {
         throw Error("Incorrect network selected");
@@ -255,7 +256,7 @@ task(
             cut,
             initAddress ? initAddress : hre.ethers.constants.AddressZero,
             initCalldata ? initCalldata : "0x",
-            { gasLimit: 800000 }
+            { gasPrice: gasPrice }
           );
 
           const receipt: ContractReceipt = await tx.wait();
