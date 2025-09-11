@@ -6,6 +6,8 @@ import "../abstract/ReentrancyGuard.sol";
 import "../abstract/Ownable.sol";
 
 contract FarmFacet is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // Add a new lp to the pool. Can only be called by the owner.
     // DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     function add(
@@ -125,20 +127,27 @@ contract FarmFacet is Ownable, ReentrancyGuard {
             s().paidOut;
     }
 
-    function pauseEmissions(uint256 stopBlock_) external onlyOwner {
-        require(stopBlock_ >= block.number, "stopBlock in past");
-        s().stopBlock = stopBlock_;
-    }
+    function pauseEmissionsAndTransferRemainingGltr(
+        address to
+    ) external onlyOwner {
+        require(to != address(0), "Cannot transfer to zero address");
 
-    function resumeEmissions() external onlyOwner {
-        s().stopBlock = 0;
-    }
+        // Pause emissions immediately
+        s().stopBlock = block.number;
 
-    //should be called only if a stopBlock has been set
-    function transferRemainingGltr(address to) external onlyOwner {
-        uint256 remaining = IERC20(s().rewardToken).balanceOf(address(this)) -
-            totalPending();
-        (s().rewardToken).transfer(to, remaining);
+        // Transfer remaining tokens
+        uint256 balance = IERC20(s().rewardToken).balanceOf(address(this));
+        uint256 totalPending_ = totalPending();
+
+        require(
+            balance >= totalPending_,
+            "Insufficient balance for pending rewards"
+        );
+
+        uint256 remaining = balance - totalPending_;
+        require(remaining > 0, "No remaining tokens to transfer");
+
+        s().rewardToken.safeTransfer(to, remaining);
     }
 
     struct UserInfoOutput {
